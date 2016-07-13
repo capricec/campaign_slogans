@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+.axis {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: none;
+  shape-rendering: crispEdges;
+}
+
+.axis.axis--x .tick line{
+  stroke: none;
+}
+
+.tick text{
+  fill: none;
+}
+
+.axis--x path {
+  display: none;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+
+.Words{
+  cursor: pointer;
+  -webkit-user-select: none;  /* Chrome all / Safari all */
+  -moz-user-select: none;     /* Firefox all */
+  -ms-user-select: none;      /* IE 10+ */
+  user-select: none;  
+}
+
+.carrot{
+  pointer-events: none;
+}
+
+
+#buttons{
+  position: absolute;
+  left:456px;
+  top:52px;
+}
+input:focus {
+    outline:none;
+}
+
+#buttons2{
+  position: absolute;
+  left:456px;
+  top:829px;
+}
+.button1, .button2, .button3{
+  font-family: Gill Sans, Arial,sans-serif;
+  width: 35px;
+  background: white;
+  text-align: center;
+  margin: -1.5px;
+  padding: 1px;
+  padding-left: 2px;
+  font-size: 8px;
+  color: #D8D0CB;
+  border:1px solid white;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  border-radius: 3px;
+  -webkit-appearance: none;
+  -webkit-border-radius: 3px;
+}
+
+.activeItem {
+  width: 35px;
+  color: white;
+  background: #AFA195;
+  border: 1px solid #AFA195;
+}
+
+.legend text{
+  font-family: Gill Sans;
+  fill: #AFA195;
+}
+
+.legend .lgdtxt0, 
+.legend .lgdtxt1,
+.bar1 text,
+.bar2 text{
+  font-family: Gill Sans;
+  fill: #AFA195;
+  font-size: 8px;
+}
+
+svg.bar1 {
+  position: absolute;
+  top:40px;
+  left:10px;
+}
+
+svg.bar2 {
+  position: absolute;
+  top:60px;
+  left:10px;
+}
+
+
+</style>
+<body>  
+  <div id = "buttons">
+          <input name="UpdateButton3"
+                      class = "button3 activeItem"
+                      type="button"
+                      value= "Election"
+                      id= "Win_Loss"
+                      onclick="update(this.className,this.id)" />  
+                
+        
+              <input name="updateButton2"
+                          class = "button2"
+                          type="button"
+                          value="Power"
+                          id = "Power"
+                          onclick="update(this.className,this.id)" />  
+              
+                <input name="updateButton1"
+                            class = "button1"
+                            type="button"
+                            value="Party"
+                            id = "Party2"
+                            onclick="update(this.className,this.id)" />         
+              
+  </div>
+  
+  <div id = "buttons2">
+        
+               
+                          <input name="UpdateButton6"
+                                      class = "button3 activeItem"
+                                      type="button"
+                                      value= "Election"
+                                      id= "Win_Loss"
+                                      onclick="update(this.className,this.id)" />  
+              <input name="updateButton5"
+                          class = "button2"
+                          type="button"
+                          value="Power"
+                          id = "Power"
+                          onclick="update(this.className,this.id)" />  
+                
+                          <input name="updateButton4"
+                                      class = "button1"
+                                      type="button"
+                                      value="Party"
+                                      id = "Party2"
+                                      onclick="update(this.className,this.id)" />        
+              
+  </div>
+  
+  <script src="https://d3js.org/d3.v4.js"></script>
+  <script>
+ 
+    var avgcheck = d3.map(); 
+    var countcheck = d3.map(); 
+    var votecheck = d3.map(); 
+
+ 
+    var chartchoice = "Win_Loss";
+    var legendtext = ["Won", "Lost"];
+    
+    
+    var margin = {top: 90, right: 450, bottom: 50, left: 450},
+        width = 1000 - margin.left - margin.right,
+        height =850 - margin.top - margin.bottom;
+
+    var parseTime = d3.timeParse("%d-%b-%y");
+    var maxradius = 6;
+    
+    function radius(maxvalue, value){
+      return (Math.sqrt((value * Math.pow(maxradius,2)) / maxvalue));
+    };
+    
+    var legendcolor = "#AFA195";
+    var linecolor = "#EAC752";
+    
+    var legenddata = [ {party: "Republican", votes: 40, Win: "Y"},{party: "Democrat", votes: 70, Win: "Y"}, {party: "Whig", votes: 80, Win: "Y"},
+                        {party: "National Republican", votes: 50, Win: ""}, {party: "Other", votes: 20, Win: ""}];
+    
+    console.log(legenddata);
+    
+    function colors(party) {
+      if(party == "Democrat" || party == 0){
+        return "#258BA8";
+      }
+      else if(party == "Republican"|| party == 1){
+       return "#D65128";
+      }
+      else if(party == "Whig"){
+        return "#62AA58";
+      }
+      else if(party == "National Republican" ){
+        return "#F29635";
+      }
+      else if(party == 2){
+        return "#F7EEEA";
+      }
+      else {
+        return "grey";
+      };
+    };
+  
+  
+    var x = d3.scaleLinear()
+        .range([0, width]);
+
+    var y = d3.scaleLinear()
+        .range([height, 0]);
+
+    var line = d3.line()
+        .x(function(d) { return x(+d[chartchoice]); })
+        .y(function(d) { return y(+d.Year); })
+        .curve(d3.curveCatmullRom.alpha(0.3));
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        
+  // var barchart = d3.select("body").append("svg")
+  //     .attr("width", 200)
+  //     .attr("height", 20)
+  //     .attr("class", "bar1")
+  //     .append("g")
+  //     .attr("transform", "translate(0,0)");
+  //     
+  // var barchart2 = d3.select("body").append("svg")
+  //     .attr("width", 200)
+  //     .attr("height", 20)
+  //     .attr("class", "bar2")
+  //     .append("g")
+  //     .attr("transform", "translate(0,0)");
+  //     
+  //     var xScale = d3.scaleLinear()
+  //             .range([70, 200]);
+  // 
+  //     var yScale = d3.scaleOrdinal()
+  //           .range([0, 50]);
+  // 
+  //     var xAxis = d3.axisTop()
+  //                 .scale(xScale);
+  // 
+  //     var yAxis = d3.axisLeft()
+  //                .scale(yScale); 
+ 
+    var partylines, votedata,pie, arc, legend, circles, linedata, text, centered, year, words, textLabels, demdata, nodedatafp, nodedatafs, nodedataw;
+        //console.log("svg");
+    var format = d3.format(".0%");
+    var prevItem = document.getElementsByClassName("button3 activeItem");
+    var priority_order = ["National Republican","Whig","Republican","Democrat"];
+ 
+    function arcTween(b) {
+      var i = d3.interpolate({value: this._current}, b);
+      return function(t) {
+        return arc(i(t));
+      };
+    };
+    
+ function lineupdate(i, donutdata,g,partydata){
+   console.log(donutdata);
+   
+  // var partydata = g[0].value.count/
+   
+   d3.selectAll(".carrot")
+     .transition().duration(200)
+     .style("fill", linecolor); 
+     
+     d3.selectAll(".lgnd2")
+       .transition().duration(300)
+       .style("opacity", 1); 
+   
+   d3.selectAll(".slogans text")
+     .transition().duration(200)
+     .text( function (d) { return d.Candidate;})
+     .attr("font-size", "7px")
+     .attr("opacity", 0.7)
+     .attr("fill", "lightgrey");
+     
+     d3.selectAll(".menu")
+       .transition().duration(200)
+       .style("fill", "none"); 
+
+       d3.selectAll("path.slogan")
+         .transition().duration(200)
+         .style("opacity", "0.3")
+         .style("stroke", "#D8D0CB")
+         .style("stroke-width", "1.5px");
+         
+       d3.selectAll(".dots circle")
+           .transition().duration(500)
+           .attr("fill", function(d) { if(d.Win == "Y") {return colors(d.Party);} else { return "white";}; })
+           .attr("stroke", function(d) { return colors(d.Party); })
+           .attr("opacity", 1);
+           
+       d3.selectAll("path."+ linedata[i].key)
+         .transition().duration(200)
+         .style("opacity", "0.8")
+         .style("stroke", linecolor)
+         .style("stroke-width", "3px"); 
+       
+       d3.selectAll(".dots circle")
+           .transition().duration(200)
+           .attr("opacity", 0.1); 
+         
+       d3.selectAll("circle."+ linedata[i].key)
+           .transition().duration(200)
+           .attr("fill", function(d) { if(d.Win == "Y") {return colors(d.Party);} else { return "white";}; })
+           .attr("stroke", function(d) { return colors(d.Party); })
+           .attr("opacity", 1);
+           
+       d3.selectAll(".slogans text")
+         .transition().duration(200)
+         .attr("font-size", "8px")
+         .style("opacity", 0.1); 
+         
+       d3.selectAll(".slogans text." + linedata[i].key)
+         .transition().duration(200)
+         .text( function (d) { return d.Candidate + ": " + d.Slogan;})
+         .style("opacity", 1)
+         .attr("font-size", "9px")
+         .style("fill", function(d) {return colors(d.Party)}); 
+         
+         d3.selectAll(".menu." + linedata[i].key)
+           .transition().duration(200)
+           .style("opacity", 1)
+           .style("fill", linecolor); 
+           
+       svg.selectAll(".arc path")
+       .data(pie(donutdata))
+       .transition()
+       .duration(300)
+       .style("opacity", 0.8)
+       .attrTween("d", arcTween);
+       
+       svg.selectAll(".arc .lgnd2")
+       .data(pie(donutdata))
+       .transition()
+       .text(function(d,i) { if(i==0){return format(donutdata[i]);}; });   
+       
+       svg.selectAll(".arc2 path")
+       .data(pie(partydata))
+       .transition()
+       .duration(300)
+       .style("opacity", 0.8)
+       .attrTween("d", arcTween);
+       
+       svg.selectAll(".arc2 .lgnd2")
+       .data(pie(partydata))
+       .transition()
+       .text(function(d,i) { if(partydata[i] > 0.15) {return format(partydata[i]);}; });
+       
+   };
+ 
+ 
+ 
+ function update(t, selector) {
+   
+   var substring = t.substring(0,7);
+   
+   var one = prevItem[0];
+   var two = prevItem[1];
+   
+     one.className = one.className.replace(" activeItem", "");
+     two.className = two.className.replace(" activeItem", "");
+     
+     prevItem = document.getElementsByClassName(substring);
+     prevItem[0].className += " activeItem";
+     prevItem[1].className += " activeItem";
+
+   chartchoice = selector;
+   if(selector == "Power") { var data = nodedatafs; legendtext = ["Incumbent Party", "Challenger"];} 
+   else if(selector == "Party2") { var data = nodedatafp; legendtext = ["Republican", "Democrat"];}
+   else if(selector == "Win_Loss") { var data = nodedataw; legendtext = ["Won", "Lost"];};
+
+   
+   for(var a =0; a < votedata.length; a++) {
+     avgcheck.set(+data[a].key, data[a].value.average);
+   };
+   
+   partylines.selectAll("path")
+    .transition()
+    .duration(300)
+    .attr("d", function(d){ return line(d.values);})
+    .style("fill", "none");
+       
+    svg.selectAll(".dots circle")
+       .transition()
+       .duration(300)
+       .attr("cx", function(d) { return x(+d[chartchoice]); });
+       
+     svg.selectAll(".legend .lgdtxt0")
+        .transition()
+        .duration(300)
+        .text(legendtext[0]);
+        
+    svg.selectAll(".legend .lgdtxt1")
+       .transition()
+       .duration(300)
+       .text(legendtext[1]);
+   
+    svg.selectAll(".slogans text")
+    .transition()
+    .duration(500)
+             .attr("x", function(d) { if((d[chartchoice] >1 && chartchoice == "Win_Loss")
+                || (d[chartchoice] > 3 && chartchoice == "Party2")
+                || (d[chartchoice] > 3 && chartchoice == "Power"))
+                { return 110; } else { return -10;};})
+            .attr("y", function(d) { if((countcheck.get(+d.Year) > 2 && d.Party != "Democrat" && d.Party != "Republican" && d.Party != "Northern Democrat" && d.Candidate != "Hugh Lawson White") 
+            || (d.Candidate == "Hillary Clinton" && chartchoice == "Win_Loss")
+            || (avgcheck.get(+d.Year) == 4 && countcheck.get(+d.Year) == 2 && d.Party != "Democrat" && d.Party != "Republican" && chartchoice == "Power"))
+                { return y(+d.Year) + 8; } 
+                else if(d.Party == "Northern Democrat"){ return y(+d.Year)-7;} 
+                else if(d.Party == "Republican" && d.Year == 2016 && chartchoice == "Win_Loss"){ return y(+d.Year)-1;} 
+                else if(countcheck.get(+d.Year) == 2 && avgcheck.get(+d.Year) != 4){ return y(+d.Year)+2;} 
+                else {return y(+d.Year);}
+                ;})
+             .style("text-anchor", function(d) { if((d[chartchoice] >1 && chartchoice == "Win_Loss")
+                || (d[chartchoice] > 3 && chartchoice == "Party2")
+                || (d[chartchoice] > 3 && chartchoice == "Power"))
+                { return "start"; } else { return "end"};});
+ };
+ 
+ function draw(data) {
+       //console.log(data);
+       
+       var linedata1 = d3.nest()
+          .key(function(d) {return d.Words;}).sortKeys(d3.descending)
+          .sortValues(function(a,b) {return +b.Year- +a.Year;})
+          .entries(data);  
+          
+      var linedata2 = d3.nest()
+           .key(function(d) {return d.Words2;}).sortKeys(d3.descending)
+           .sortValues(function(a,b) {return +b.Year- +a.Year;})
+           .entries(data); 
+           
+     var linedata3 = d3.nest()
+          .key(function(d) {return d.Words3;}).sortKeys(d3.descending)
+          .sortValues(function(a,b) {return +b.Year- +a.Year;})
+          .entries(data); 
+        
+      var linedata4 = d3.nest()
+           .key(function(d) {return d.Words4;}).sortKeys(d3.descending)
+           .sortValues(function(a,b) {return +b.Year- +a.Year;})
+           .entries(data); 
+          
+        linedata1.pop();
+        linedata2.pop();
+        linedata3.pop();
+        linedata4.pop();
+             
+            linedata = linedata1.concat(linedata2);
+            linedata = linedata.concat(linedata3);
+            linedata = linedata.concat(linedata4);
+            
+            console.log(linedata);
+          
+        votedata = d3.nest()
+         .key(function(d) {return d.Year;})
+         .rollup(function(leaves) { return {"total": d3.sum(leaves, function(d) { return +d.Electoral_Votes;})};})
+         .entries(data);
+          
+        nodedatafs = d3.nest()
+         .key(function(d) {return d.Year;})
+         .rollup(function(leaves) { return {"count": leaves.length, "average": d3.sum(leaves, function(d) { return +d.Power;}) / leaves.length};})
+         .sortValues(d3.ascending)
+         .entries(data);
+         
+        nodedatafp = d3.nest()
+          .key(function(d) {return d.Year;})
+          .rollup(function(leaves) { return {"count": leaves.length, "average": d3.sum(leaves, function(d) { return +d.Party1;}) / leaves.length};})
+          .sortValues(d3.ascending)
+          .entries(data);
+          
+        nodedataw = d3.nest()
+         .key(function(d) {return d.Year;})
+         .rollup(function(leaves) { return {"count": leaves.length, "average": d3.sum(leaves, function(d) { return +d.Win_Loss;}) / leaves.length};})
+         .sortValues(d3.ascending)
+         .entries(data);
+           
+
+         var g = d3.nest()
+         .key(function(d) {return d.Party;}).sortKeys(function(a,b) { return priority_order.indexOf(b) - priority_order.indexOf(a); })
+         .rollup(function(leaves) { return {"count": leaves.length};})
+         .entries(data);
+         console.log(g);
+         
+         if(g.length >= 3){
+           var partydata = [g[0].value.count / data.length, g[1].value.count/data.length, (data.length - g[0].value.count - g[1].value.count)/data.length];}
+         else if (g.length == 2){
+           var partydata = [g[0].value.count / data.length, g[1].value.count/data.length];
+         };
+           
+      for(var a =0; a < nodedatafp.length; a++) {
+        avgcheck.set(+nodedatafp[a].key, nodedatafp[a].value.average);
+        countcheck.set(+nodedatafp[a].key, nodedatafp[a].value.count);
+        votecheck.set(+votedata[a].key, votedata[a].value.total);
+
+      };
+
+      x.domain([0.9,4.1]);
+      y.domain([1824,2016]);
+
+      svg.append("g")
+          .attr("class", "axis axis--y")
+          .call(d3.axisLeft(y));
+
+/*// bar chart
+
+barchart.append("g")
+.attr("class", "x axis")
+.call(xAxis);
+
+yScale.domain([0]);
+xScale.domain([0,1]);
+
+barchart.append("g")
+    .attr("class", "y axis")
+    .call(yAxis);
+    
+      var donutdata = [49/109, (109-49)/109];
+      var donutcolor = d3.scaleOrdinal()
+      .range([linecolor, "#F7EEEA"]);
+  
+barchart.append("text")
+.attr("x", 65)
+.attr("y", 7)
+.text("Slogan Effectiveness")
+.attr("text-anchor", "end");
+      
+console.log(donutdata);
+var h = barchart.selectAll("rect")
+.data(donutdata)
+.enter().append("g");
+
+var barcount = 0;
+
+h.append("rect")
+.attr('x', function (d) { barcount += d; return xScale(barcount - d);})
+.attr('y', yScale(0))
+.attr('height', 10)
+.attr('width', function (d) {return xScale(d);})
+.style("fill", function(d,i){console.log(donutcolor[i]);return donutcolor(i);});
+
+barcount = 0; 
+
+h.append("text")
+.attr("class", "txt")
+.attr('x', function (d) { barcount += d; return xScale(barcount - d)+2;})
+.attr('y', yScale(0)+7)
+.text(function(d){ return format(d);})
+.style("fill", "black")
+.style("font-size", "7px");
+
+//barchart2
+
+barchart2.append("g")
+.attr("class", "x axis")
+.call(xAxis);
+
+barchart2.append("text")
+.attr("x", 65)
+.attr("y", 7)
+.text("Party Breakdown")
+.attr("text-anchor", "end");
+
+yScale.domain([0]);
+xScale.domain([0,1]);
+
+barchart2.append("g")
+    .attr("class", "y axis")
+    .call(yAxis);
+    
+var j = barchart2.selectAll("rect")
+.data(partydata)
+.enter().append("g");
+
+barcount = 0;
+j.append("rect")
+.attr('x', function (d) { barcount += d; return xScale(barcount -d);})
+.attr('y', yScale(0))
+.attr('height', 10)
+.attr('width', function (d) {return xScale(d);})
+.style("fill", function(d,i){return colors(i);});
+
+barcount =0;
+j.append("text")
+.attr("class", "txt")
+.attr('x', function (d) { barcount += d;  return xScale(barcount -d)+2;})
+.attr('y', yScale(0)+7)
+.text(function(d){ return format(d);})
+.style("font-size", "7px")
+.style("fill", "black");
+
+
+*/
+
+
+
+//legend
+      
+    legend = svg.append("g")
+      .attr("class", "legend");
+
+      legend.append("rect")
+      .attr("x", -3)
+      .attr("y", - 27)
+      .attr("width", width+7)
+      .attr("height", 1)
+      .attr("fill", "#D8D0CB");
+      
+      legend.append("rect")
+      .attr("x", -3)
+      .attr("y", height+20)
+      .attr("width", width+7)
+      .attr("height", 1)
+      .attr("fill", "#D8D0CB");
+    
+    var counter = 5;
+      
+
+    legend.append("text")
+    .attr("class", "carrot")
+    .attr("x", -84)
+    .attr("y", -58)
+    .text("\u2227")
+    .style("fill", "none")
+    .style("font-size", "15px")
+    .style("font-family", "Gill Sans");
+      
+      
+      legend.append("text")
+      .attr("x", -75)
+      .attr("y", -67)
+      .text("American Presidental Campaign Slogans")
+      .style("fill", "#5B5452")
+      .style("font-size", "20px")
+      .style("font-family", "Gill Sans");
+
+      
+      legend.append("rect")
+        .attr("x", 405)
+        .attr("y", -80)
+        .attr("width", 125)
+        .attr("height", 97)
+        .style("stroke", "none")
+        .style("fill", "white") ;
+        
+        
+      legend.append("g")
+      .attr("class", "lgddots")
+      .selectAll(".lgddots")
+      .data(legenddata)
+      .enter().append("circle")
+      .attr("r", function(d) { return radius(100, d.votes);})
+      .attr("cx", 487)
+      .attr("cy", function(d, i) { if(i < 3) {return -57 + 14*i; } else { return -50 + 14*i;};})
+      .attr("fill", function(d) { if(d.Win == "Y") {return colors(d.party);} else { return "white";}; })
+      .attr("stroke", function(d) { return colors(d.party); })
+      .attr("stroke-width", "2px")
+      .attr("opacity", 0.8);
+      
+      legend.append("g")
+      .attr("class", "legendtext")
+      .selectAll(".lgdtxt")
+        .data(legenddata)
+        .enter()
+        .append("text")
+        .attr("x", 478)
+        .attr("y",function(d, i) { if(i < 3) {return -55 + 14*i; } else { return -48 + 14*i;};})
+        .text( function(d) { return d.party;})
+        .style("font-size", "8px")
+        .style("text-anchor", "end")
+        .style("fill", "#D8D0CB") ;
+          
+          legend.append("line")
+            .attr("x1", 498)
+            .attr("x2", 498)
+            .attr("y1", -55)
+            .attr("y2", -29)
+            .style("stroke-width", "0.9px")
+            .style("stroke", legendcolor) ;
+            
+        legend.append("line")
+          .attr("x1", 498)
+          .attr("x2", 498)
+          .attr("y1", -11)
+          .attr("y2", 7)
+          .style("stroke-width", "0.9px")
+          .style("stroke", legendcolor) ;
+
+        legend.append("text")
+          .attr("x", 482)
+          .attr("y", -66)
+          .text("%  Electoral Votes")
+          .style("font-size", "9px");
+              
+          legend.append("text")
+            .attr("x", 503)
+            .attr("y", -40)
+            .text("Won")
+            .style("font-size", "9px");
+            
+          legend.append("text")
+            .attr("x", 503)
+            .attr("y", 0)
+            .text("Lost")
+            .style("font-size", "9px");
+      
+      
+      
+      
+      words = legend.append("g")
+      .attr("class", "Words")
+      .selectAll(".words")
+      .data(linedata)
+      .enter()
+      .append("text")
+      .attr("class", function(d) { return "menu " + d.key;})
+      .attr("x", -85)
+      .attr("y", -67)
+      .text(function(d) { return d.key;})
+      .style("fill", "none")
+      .style("font-size", "20px")
+      .style("font-family", "Book Antiquas")
+      .style("text-anchor", "end")
+      .on("click", function(d,i){
+        
+        var s = i+1;
+        if(s == linedata.length) { s = 0;};
+        
+        var f = d3.nest()
+        .key(function(d) {return d.Win;})
+        .sortKeys(d3.ascending)
+        .rollup(function(leaves) { return {"count": leaves.length};})
+        .entries(linedata[s].values);
+        
+        var g = d3.nest()
+        .key(function(d) {return d.Party;}).sortKeys(function(a,b) { return priority_order.indexOf(b) - priority_order.indexOf(a); })
+        .rollup(function(leaves) { return {"count": leaves.length};})
+        .entries(linedata[s].values);
+        
+        var donutdata = [f[1].value.count / (f[0].value.count + f[1].value.count), f[0].value.count / (f[0].value.count + f[1].value.count)];
+
+        if(g.length >= 3){
+          var partydata = [g[0].value.count / linedata[s].values.length, g[1].value.count/linedata[s].values.length, (linedata[s].values.length -g[0].value.count-g[1].value.count)/linedata[s].values.length];}
+        else if (g.length == 2){
+          var partydata = [g[0].value.count / linedata[s].values.length, g[1].value.count/linedata[s].values.length,0];
+        };
+        
+        lineupdate(s, donutdata,g, partydata);
+      });
+    
+      
+      svg.append("g")
+          .attr("class", "axis axis--x")
+          .attr("transform", "translate(0,-10)")
+          .call(d3.axisTop(x)
+          .ticks(4)
+          .tickSize(4));
+      
+      legend.append("text")
+      .attr("class", "lgdtxt0")
+      .attr("x", -3)
+      .attr("y", - 16)
+      .text(legendtext[0])
+      .attr("fill", legendcolor);
+      
+      legend.append("text")
+      .attr("class", "lgdtxt1")
+      .attr("x", width+4)
+      .attr("y", - 16)
+      .style("text-anchor", "end")
+      .text(legendtext[1])
+      .attr("fill", legendcolor);
+      
+      legend.append("text")
+      .attr("class", "lgdtxt0")
+      .attr("x", -3)
+      .attr("y", height + 18)
+      .text(legendtext[0])
+      .attr("fill", legendcolor);
+      
+      legend.append("text")
+      .attr("class", "lgdtxt1")
+      .attr("x", width+4)
+      .attr("y", height + 18)
+      .style("text-anchor", "end")
+      .text(legendtext[1])
+      .attr("fill", legendcolor);
+
+//lines, dots, text        
+
+      partylines = svg.selectAll(".partyline")
+      .data(linedata)
+      .enter().append("g")
+      .attr("class", function(d) { return d.key;})
+      .style("stroke-width", "1.5px");
+
+      partylines.append("path")
+          .attr("class", function(d) { return "slogan " +d.key;})
+          .attr("d", function(d){ return line(d.values);})
+          .style("fill", "none")
+          .style("stroke", "#D8D0CB")
+          .style("opacity", 1)
+          .on('mouseover', function (d,i){
+            
+            var f = d3.nest()
+            .key(function(d) {return d.Win;})
+            .rollup(function(leaves) { return {"count": leaves.length};})
+            .sortValues(d3.ascending)
+            .entries(d.values);
+            
+            var donutdata = [f[1].value.count / (f[0].value.count + f[1].value.count), f[0].value.count / (f[0].value.count + f[1].value.count)];
+            
+            var g = d3.nest()
+            .key(function(d) {return d.Party;}).sortKeys(function(a,b) { return priority_order.indexOf(b) - priority_order.indexOf(a); })
+            .rollup(function(leaves) { return {"count": leaves.length};})
+            .entries(d.values);
+            
+          
+            if(g.length >= 3){
+              var partydata = [g[0].value.count / d.values.length, g[1].value.count/d.values.length, (d.values.length - g[0].value.count - g[1].value.count)/d.values.length];}
+            else if (g.length == 2){
+              var partydata = [g[0].value.count / d.values.length, g[1].value.count/d.values.length,0];
+            };
+            
+            lineupdate(i, donutdata, g, partydata);
+            console.log(g);
+              });
+      
+      year = svg.append("g")
+      .attr("class", "Years")
+      .selectAll(".years")
+      .data(votedata)
+      .enter()
+      .append("text")
+      .attr("class", function(d) { return "date" + d.key;})
+      .attr("x", 20)
+      .attr("y", function(d) { return y(+d.key)+8;})
+      .text(function(d) { return d.key;})
+      .style("fill", "none")
+      .style("font-size", "28px")
+      .style("letter-spacing", "1px")
+      .style("font-family", "Gill Sans");    
+          
+      circles = svg.append("g")
+      .attr("class", "dots")
+      .selectAll(".dots")
+      .data(data)
+      .enter().append("circle")
+      .attr("class", function(d) { return d.Words + " " + d.Words2+ " " + d.Words3 +" " + d.Words4 + " year"+ d.Year;})
+      //.attr("r", 5)
+     .attr("r", function(d) { return radius(votecheck.get(+d.Year), d.Electoral_Votes);})
+      .attr("cx", function(d) { return x(+d[chartchoice]); })
+      .attr("cy", function(d) { return y(+d.Year)-2; })
+      .attr("fill", function(d) { if(d.Win == "Y") {return colors(d.Party);} else { return "white";}; })
+      .attr("stroke", function(d) { return colors(d.Party); })
+      .attr("stroke-width", "2px")
+      .attr("opacity", 0.8);
+      
+
+      text = svg.append("g")
+      .attr("class", "slogans")
+      .selectAll(".slogans")
+        .data(data)
+        .enter()
+        .append("text");
+    
+      textLabels = text
+      .attr("x", function(d) { if((d[chartchoice] >1 && chartchoice == "Win_Loss")
+         || (d[chartchoice] > 3 && chartchoice == "Party2")
+         || (d[chartchoice] > 3 && chartchoice == "Power"))
+         { return 110; } else { return -10;};})
+         .attr("y", function(d) { if((countcheck.get(+d.Year) > 2 && d.Party != "Democrat" && d.Party != "Republican" && d.Party != "Northern Democrat" && d.Candidate != "Hugh Lawson White") 
+         || (d.Candidate == "Hillary Clinton" && chartchoice == "Win_Loss")
+         || (avgcheck.get(+d.Year) == 4 && countcheck.get(+d.Year) == 2 && d.Party != "Democrat" && chartchoice == "Power"))
+             { return y(+d.Year) + 8; } 
+             else if(d.Party == "Northern Democrat"){ return y(+d.Year)-7;} 
+             else if(d.Party == "Republican" && d.Year == 2016 && chartchoice == "Win_Loss"){ return y(+d.Year)-1;} 
+             else if(countcheck.get(+d.Year) == 2 && avgcheck.get(+d.Year) != 4){ return y(+d.Year)+2;} 
+             else {return y(+d.Year)+1;}
+             ;})
+      .style("text-anchor", function(d) { if((d[chartchoice] >1 && chartchoice == "Win_Loss")
+         || (d[chartchoice] > 3 && chartchoice == "Party2")
+         || (d[chartchoice] > 3 && chartchoice == "Power"))
+         { return "start"; } else { return "end"};})
+          .attr("class", function(d) { return "year" + d.Year + " " + d.Words + " " +d.Words2+ " " + d.Words3+ " " + d.Words4;})
+          .text( function (d) { return d.Candidate;})
+          .attr("font-family", "sans-serif")
+          .attr("font-size", "8px")
+          .attr("opacity", 0.7)
+          .attr("fill", "lightgrey")
+          .on('mouseover', function (d,i){
+                
+                d3.selectAll(".slogans text")
+                  .transition().duration(300)
+                  .style("opacity", 0.1); 
+                  
+                d3.selectAll("path")
+                  .transition().duration(100)
+                  .style("opacity", 0.2); 
+                  
+                d3.selectAll(".dots circle")
+                  .transition().duration(100)
+                  .attr("opacity", 0.05); 
+                  
+                d3.selectAll(".dots circle.year" +d.Year)
+                  .transition().duration(100)
+                  .attr("fill", function(d) { if(d.Win == "Y") {return colors(d.Party);} else { return "white";}; })
+                  .attr("stroke", function(d) { return colors(d.Party); })
+                  .attr("opacity", 0.8);
+                  
+                d3.selectAll("text.year" + d.Year)
+                  .transition().duration(300)
+                  .text( function (d) { return d.Candidate + ": " + d.Slogan;})
+                  .style("opacity", 1)
+                  .attr("font-size", "9px")
+                  .style("fill", function(d) { return colors(d.Party)});  
+                
+                  d3.selectAll(".lgnd2")
+                    .transition().duration(300)
+                    .style("opacity", 0); 
+                    
+                    d3.selectAll("text.lgnd")
+                      .transition().duration(300)
+                      .style("opacity", 0.2);
+                      
+                d3.selectAll("text.date" + d.Year)
+                  .transition().duration(300)
+                  .style("fill", "#D8D0CB");  
+
+            })
+            .on('mouseout', function(){
+              
+              d3.selectAll("text.lgnd")
+                .transition().duration(300)
+                .style("opacity", 1);
+                
+              d3.selectAll(".Years text")
+                .transition().duration(300)
+                .style("fill", "none");  
+              
+              d3.selectAll(".slogans text")
+                .transition().duration(400)
+                .text( function (d) { return d.Candidate;})
+                .style("opacity", 0.7)
+                .attr("font-size", "8px")
+                .style("fill", "lightgrey"); 
+                
+                d3.selectAll(".lgnd2")
+                  .transition().duration(300)
+                  .style("opacity", 1); 
+                
+              d3.selectAll("path")
+                .transition().duration(300)
+                .style("opacity", 0.7); 
+                
+              d3.selectAll(".dots circle")
+                .transition().duration(300)
+                .attr("fill", function(d) { if(d.Win == "Y") {return colors(d.Party);} else { return "white";}; })
+                .attr("stroke", function(d) { return colors(d.Party); })
+                .attr("opacity", 0.8);
+              });
+              
+              var donutdata = [49/109, (109-49)/109];
+              var radius2 = 24;
+              
+              var donutcolor = d3.scaleOrdinal()
+              .range([linecolor, "#F7EEEA"]);
+              
+              arc = d3.arc()
+              .outerRadius(radius2)
+              .innerRadius(radius2/2);
+              //.startAngle(0)
+              //.endAngle(Math.PI / 2);
+              
+               pie = d3.pie()
+              .sort(null)
+              .value(function(d) { return d; });
+  
+// slogan effectivness donut              
+              var donut = svg.selectAll(".arc")
+              .data(pie(donutdata))
+              .enter().append("g")
+              .attr("class", "arc")
+              .attr('transform', 'translate(-383, -40)');
+              
+              donut.append("path")
+              .attr("d", arc)
+              .attr("class", "arcpath")
+              .attr("id", function(d,i){ return "arc_"+i; })
+              .each(function(d) { this._current = d; })
+              .style("fill", function(d,i) { return donutcolor(i); })
+              //.style("fill", "none")
+              .style("opacity", 1)
+              //.style("stroke", "none")
+              .style("stroke", function(d,i) { return donutcolor(i); })
+              .style("stroke-weight", "2px");
+              
+              donut.append("text")
+              .attr("x", 1)
+              .attr("dy", 10)
+              .append("textPath")
+              .attr("xlink:href",function(d,i){return "#arc_"+i;})
+              //.attr("startOffset","10%")
+              .attr("class", "lgnd2")
+              .style("text-anchor","start")
+              .attr("font-family", "Gill Sans")
+              .attr("font-size", "8px")	
+              .style("fill", "none")
+              //.style("fill", "#5B5452")
+              .style("letter-spacing", "2px")
+              .text(function(d,i) { if(i==0){ return format(donutdata[i]);}; });
+              
+              svg.append("path")
+              .attr("id", "wavy") 
+        	    .attr("d", "M -408,-40 A 20,20 1 0,1 -359,-40") //Notation for an SVG path, from bl.ocks.org/mbostock/2565344
+        	    .style("fill", "none")
+        	    .style("stroke", "none");
+              
+              svg.append("text")
+              .attr("class", "lgnd")
+              .attr("dy", -3)
+              .append("textPath") 
+        	    .attr("xlink:href", "#wavy") 
+        	    .style("text-anchor","start")
+              .attr("startOffset","0%") 
+              .attr("font-family", "Gill Sans")
+              .attr("font-size", "9px")	
+        	    .text("Slogan Effectiveness")
+              //.style("fill", "none");
+              .style("fill", legendcolor);
+// party breakdown donut
+
+          var donut2 = svg.selectAll(".arc2")
+          .data(pie(partydata))
+          .enter().append("g")
+          .attr("class", "arc2")
+          .attr('transform', 'translate(-325, -40)');
+      
+          console.log(partydata);
+          
+          donut2.append("path")
+          .attr("d", arc)
+          .attr("class", "arcpath")
+          .attr("id", function(d,i){ return "arc2_"+i; })
+          .each(function(d) { this._current = d; })
+          //.style("fill", "none")
+          .style("fill", function(d,i) { return colors(i); })
+          .style("opacity", 0.8)
+          //.style("stroke", "none")
+          .style("stroke", function(d,i) { return colors(i); })
+          .style("stroke-weight", "2px");
+
+          donut2.append("text")
+          .attr("x", 1)
+          .attr("dy", 10)
+          .append("textPath")
+          .attr("xlink:href",function(d,i){return "#arc2_"+i;})
+          .attr("class", "lgnd2")
+          .style("text-anchor","start")
+          .attr("font-family", "Gill Sans")
+          .attr("font-size", "8px")	
+          //.style("fill", "#5B5452")
+          .style("fill", "none")
+          .style("letter-spacing", "2px")
+          .text(function(d,i) { if(partydata[i] > 0.15) {return format(partydata[i]);}; });
+          
+          svg.append("path")
+          .attr("id", "wavy2") 
+          .attr("d", "M -360,-40 A 20,20 1 1,0 -290,-40") //Notation for an SVG path, from bl.ocks.org/mbostock/2565344
+          .style("fill", "none")
+          .style("stroke", "none");
+          
+          svg.append("text")
+          .attr("class", "lgnd")
+          .attr("dy", -3)
+          .append("textPath") 
+          .attr("xlink:href", "#wavy2") 
+          .style("text-anchor","start")
+          .attr("startOffset","15%") 
+          .attr("font-family", "Gill Sans")
+          .attr("font-size", "9px")	
+          .text("Party Breakdown")
+          .attr("letter-spacing", "1.5px")
+          //.style("fill", "none");
+          .style("fill", legendcolor);
+  // legend
+  
+
+      
+  
+  //animation for the start             
+              
+              var numbers = [0, 7, 10, 3,11,14];
+              for(var b =0; b<1;b++)
+              { window.setTimeout(function(){
+                
+                var s = numbers[Math.floor(Math.random() * 6)];
+                var f = d3.nest()
+                .key(function(d) {return d.Win;})
+                .rollup(function(leaves) { return {"count": leaves.length};})
+                .sortValues(d3.ascending)
+                .entries(linedata[s].values);
+                
+                
+                var g = d3.nest()
+                .key(function(d) {return d.Party;}).sortKeys(function(a,b) { return priority_order.indexOf(b) - priority_order.indexOf(a); })
+                .rollup(function(leaves) { return {"count": leaves.length};})
+                .entries(linedata[s].values);
+                
+                console.log(g);
+                
+                var donutdata = [f[1].value.count / (f[0].value.count + f[1].value.count), f[0].value.count / (f[0].value.count + f[1].value.count)];
+                
+              
+              if(g.length >= 3){
+                  var partydata = [g[0].value.count / linedata[s].values.length, g[1].value.count/linedata[s].values.length, (linedata[s].values.length -g[0].value.count-g[1].value.count)/linedata[s].values.length];}
+                else if (g.length == 2){
+                  var partydata = [g[0].value.count / linedata[s].values.length, g[1].value.count/linedata[s].values.length,0];
+                };
+                
+                console.log(partydata,g);
+                 lineupdate(s, donutdata, g, partydata);}, 1500);};
+};
+
+  d3.csv("CampaignSlogans.csv", draw);
+  
+
+
+  </script>
+  
+
+</body>
+
