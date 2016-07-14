@@ -636,7 +636,7 @@ j.append("text")
     legend.append("text")
     .attr("class", "carrot")
     .attr("x", -84)
-    .attr("y", -58)
+    .attr("y", -59)
     .text("\u2227")
     .style("fill", "none")
     .style("font-size", "15px")
@@ -720,8 +720,6 @@ j.append("text")
             .attr("y", 0)
             .text("Lost")
             .style("font-size", "9px");
-      
-      
       
       
       words = legend.append("g")
@@ -817,7 +815,7 @@ j.append("text")
           .style("fill", "none")
           .style("stroke", "#D8D0CB")
           .style("opacity", 1)
-          .on('mouseover', function (d,i){
+          .on('click', function (d,i){
             
             var f = d3.nest()
             .key(function(d) {return d.Win;})
@@ -1147,4 +1145,3 @@ j.append("text")
   
 
 </body>
-
